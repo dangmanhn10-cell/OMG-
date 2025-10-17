@@ -1,0 +1,2 @@
+# OMG-
+Tập làm script
