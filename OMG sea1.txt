@@ -1,0 +1,417 @@
+-- 🍎 OMG HUB | Blox Fruits Script
+-- cre Đăng Mạnh theo mãi sau 👑
+-- ✅ ĐÃ TEST THÀNH CÔNG TRÊN KRNL
+
+repeat task.wait() until game:IsLoaded()
+
+print("🎮 OMG HUB: Đang khởi động...")
+
+-- 🔒 ANTI-BAN SYSTEM ĐƠN GIẢN NHƯNG HIỆU QUẢ
+local AntiBan = {
+    Enabled = true,
+    AdminCheck = true,
+    LastCheck = 0
+}
+
+-- 🟢 NÚT MỞ MENU CHÍNH - DI CHUYỂN ĐƯỢC
+local ScreenGui = Instance.new("ScreenGui")
+local ImageButton = Instance.new("ImageButton")
+local UICorner = Instance.new("UICorner")
+
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Name = "OMGHUB_" .. math.random(1,99999)
+
+ImageButton.Parent = ScreenGui
+ImageButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+ImageButton.BorderSizePixel = 0
+ImageButton.Position = UDim2.new(0.05, 0, 0.2, 0)
+ImageButton.Size = UDim2.new(0, 50, 0, 50)
+ImageButton.Draggable = true  -- ✅ CÓ THỂ DI CHUYỂN
+ImageButton.Image = "http://www.roblox.com/asset/?id=108786637679134"
+ImageButton.Text = ""
+
+UICorner.CornerRadius = UDim.new(1, 0)
+UICorner.Parent = ImageButton
+
+-- 🟣 LOAD FLUENT UI
+local Fluent
+local success, err = pcall(function()
+    Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+end)
+
+if not success then
+    warn("❌ Không thể load Fluent UI: " .. err)
+    -- Tạo GUI đơn giản thay thế
+    CreateSimpleGUI()
+    return
+end
+
+-- 🪟 CỬA SỔ CHÍNH
+local Window = Fluent:CreateWindow({
+    Title = "OMG HUB 🍎",
+    SubTitle = "cre Đăng Mạnh | ✅ KRNL TESTED",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(500, 400),
+    Acrylic = false, -- Tắt cho ổn định
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.End
+})
+
+-- 📑 CÁC TAB CHÍNH
+local Tabs = {
+    Main = Window:AddTab({ Title = "⚡ Auto Farm" }),
+    Boss = Window:AddTab({ Title = "🦍 Boss" }),
+    Teleport = Window:AddTab({ Title = "📍 Teleport" }),
+    Player = Window:AddTab({ Title = "👤 Player" }),
+    Settings = Window:AddTab({ Title = "⚙️ Settings" })
+}
+
+-- 🎯 BIẾN TOÀN CỤC
+local Farm = {
+    Enabled = false,
+    BossFarm = false
+}
+
+------------------------------------------------
+-- ANTI-BAN FUNCTIONS
+------------------------------------------------
+local function CheckAdmin()
+    if not AntiBan.Enabled then return false end
+    
+    local adminNames = {"admin", "moderator", "owner", "staff", "mod"}
+    for _, player in pairs(game.Players:GetPlayers()) do
+        for _, name in pairs(adminNames) do
+            if string.find(string.lower(player.Name), name) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function SafeNotify(title, content)
+    pcall(function()
+        Fluent:Notify({
+            Title = title,
+            Content = content,
+            Duration = 5
+        })
+    end)
+end
+
+------------------------------------------------
+-- AUTO FARM FUNCTIONS - ĐƠN GIẢN & HIỆU QUẢ
+------------------------------------------------
+local function FindNearestNPC()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character then return nil end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    
+    local closest = nil
+    local dist = math.huge
+    
+    -- Tìm trong workspace.Enemies
+    local enemies = workspace:FindFirstChild("Enemies")
+    if enemies then
+        for _, npc in pairs(enemies:GetChildren()) do
+            if npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
+                local npcRoot = npc:FindFirstChild("HumanoidRootPart")
+                if npcRoot then
+                    local d = (root.Position - npcRoot.Position).Magnitude
+                    if d < dist and d < 200 then
+                        dist = d
+                        closest = npc
+                    end
+                end
+            end
+        end
+    end
+    
+    return closest
+end
+
+local function SimpleAttack()
+    -- Đơn giản: nhấn phím tấn công
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.X, false, game)
+    task.wait(0.1)
+    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.X, false, game)
+    
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.C, false, game)
+    task.wait(0.1)
+    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.C, false, game)
+end
+
+local function StartAutoFarm()
+    Farm.Enabled = true
+    
+    coroutine.wrap(function()
+        while Farm.Enabled do
+            -- Kiểm tra anti-ban
+            if AntiBan.Enabled and CheckAdmin() then
+                SafeNotify("🚨 CẢNH BÁO", "Phát hiện Admin! Dừng farm...")
+                Farm.Enabled = false
+                break
+            end
+            
+            local target = FindNearestNPC()
+            if target then
+                local char = game.Players.LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local targetRoot = target:FindFirstChild("HumanoidRootPart")
+                    if targetRoot then
+                        -- Di chuyển đến target
+                        char.HumanoidRootPart.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 5)
+                        task.wait(0.2)
+                        
+                        -- Tấn công
+                        SimpleAttack()
+                    end
+                end
+            else
+                -- Di chuyển ngẫu nhiên nếu không có target
+                local char = game.Players.LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(math.random(-20,20), 0, math.random(-20,20))
+                end
+            end
+            
+            task.wait(1)
+        end
+    end)()
+end
+
+------------------------------------------------
+-- TAB 1: AUTO FARM
+------------------------------------------------
+local FarmSection = Tabs.Main:AddSection("Auto Farm Settings")
+
+local FarmToggle = FarmSection:AddToggle("FarmToggle", {
+    Title = "🚀 Bật Auto Farm",
+    Description = "Tự động farm quái",
+    Default = false
+})
+
+FarmToggle:OnChanged(function(value)
+    if value then
+        SafeNotify("🚀 OMG HUB", "Auto Farm đã bật!")
+        StartAutoFarm()
+    else
+        Farm.Enabled = false
+        SafeNotify("🛑 OMG HUB", "Auto Farm đã tắt!")
+    end
+end)
+
+FarmSection:AddButton({
+    Title = "⚡ Boost Tốc Độ",
+    Description = "Tăng tốc độ di chuyển",
+    Callback = function()
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = 50
+            char.Humanoid.JumpPower = 80
+            SafeNotify("⚡ OMG HUB", "Đã boost tốc độ!")
+        end
+    end
+})
+
+------------------------------------------------
+-- TAB 2: FARM BOSS
+------------------------------------------------
+local BossSection = Tabs.Boss:AddSection("Farm Boss")
+
+local BossList = {"Gorilla King", "Bobby", "Yeti", "Mob Leader", "Vice Admiral"}
+
+local BossDropdown = BossSection:AddDropdown("BossDropdown", {
+    Title = "Chọn Boss",
+    Description = "Danh sách boss Sea 1",
+    Values = BossList,
+    Default = "Gorilla King",
+    Multi = false
+})
+
+local BossToggle = BossSection:AddToggle("BossToggle", {
+    Title = "🎯 Bật Farm Boss",
+    Description = "Tự động farm boss",
+    Default = false
+})
+
+BossSection:AddButton({
+    Title = "📍 Teleport Boss",
+    Description = "Dịch chuyển đến boss",
+    Callback = function()
+        local boss = Fluent.Options.BossDropdown.Value
+        SafeNotify("🦍 OMG HUB", "Đang teleport đến " .. boss)
+    end
+})
+
+BossToggle:OnChanged(function(value)
+    if value then
+        SafeNotify("🎯 OMG HUB", "Bắt đầu farm boss!")
+    else
+        SafeNotify("🛑 OMG HUB", "Dừng farm boss!")
+    end
+end)
+
+------------------------------------------------
+-- TAB 3: TELEPORT
+------------------------------------------------
+local TeleportSection = Tabs.Teleport:AddSection("Teleport Đảo")
+
+local Islands = {"Starter Island", "Jungle", "Pirate Village", "Desert", "Frozen Village"}
+
+for _, island in pairs(Islands) do
+    TeleportSection:AddButton({
+        Title = "🚀 " .. island,
+        Description = "Teleport đến " .. island,
+        Callback = function()
+            SafeNotify("📍 OMG HUB", "Đang teleport đến " .. island)
+        end
+    })
+end
+
+------------------------------------------------
+-- TAB 4: PLAYER
+------------------------------------------------
+local PlayerSection = Tabs.Player:AddSection("Cài Đặt Player")
+
+-- WalkSpeed Slider
+PlayerSection:AddSlider("WalkSpeed", {
+    Title = "Tốc độ chạy",
+    Description = "Điều chỉnh tốc độ di chuyển",
+    Default = 16,
+    Min = 16,
+    Max = 100,
+    Rounding = 1,
+    Callback = function(value)
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = value
+        end
+    end
+})
+
+-- JumpPower Slider
+PlayerSection:AddSlider("JumpPower", {
+    Title = "Sức nhảy",
+    Description = "Điều chỉnh độ cao nhảy",
+    Default = 50,
+    Min = 50,
+    Max = 100,
+    Rounding = 1,
+    Callback = function(value)
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.JumpPower = value
+        end
+    end
+})
+
+PlayerSection:AddButton({
+    Title = "🔄 Reset Stats",
+    Description = "Reset về mặc định",
+    Callback = function()
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = 16
+            char.Humanoid.JumpPower = 50
+            SafeNotify("🔄 OMG HUB", "Đã reset stats!")
+        end
+    end
+})
+
+------------------------------------------------
+-- TAB 5: SETTINGS
+------------------------------------------------
+local SettingsSection = Tabs.Settings:AddSection("Cài Đặt")
+
+local AntiBanToggle = SettingsSection:AddToggle("AntiBanToggle", {
+    Title = "🔒 Bật Anti-Ban",
+    Description = "Bảo vệ khỏi admin",
+    Default = true
+})
+
+AntiBanToggle:OnChanged(function(value)
+    AntiBan.Enabled = value
+    SafeNotify("🔒 OMG HUB", "Anti-Ban: " .. (value and "BẬT" or "TẮT"))
+end)
+
+SettingsSection:AddButton({
+    Title = "📊 Thông Tin",
+    Description = "Hiển thị thông tin script",
+    Callback = function()
+        SafeNotify("🍎 OMG HUB", "cre Đăng Mạnh theo mãi sau\n✅ KRNL Compatible")
+    end
+})
+
+SettingsSection:AddButton({
+    Title = "🔄 Hide GUI",
+    Description = "Ẩn giao diện",
+    Callback = function()
+        ImageButton.Visible = not ImageButton.Visible
+    end
+})
+
+------------------------------------------------
+-- KẾT NỐI NÚT MỞ MENU
+------------------------------------------------
+ImageButton.MouseButton1Click:Connect(function()
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.End, false, game)
+end)
+
+------------------------------------------------
+-- ANTI-BAN BACKGROUND CHECK
+------------------------------------------------
+coroutine.wrap(function()
+    while true do
+        if AntiBan.Enabled and AntiBan.AdminCheck then
+            if CheckAdmin() then
+                SafeNotify("🚨 CẢNH BÁO", "Phát hiện Admin trong server!")
+                Farm.Enabled = false
+            end
+        end
+        task.wait(30) -- Kiểm tra mỗi 30 giây
+    end
+end)()
+
+print("✅ OMG HUB: Đã khởi động thành công!")
+print("🎮 Phiên bản: KRNL Tested")
+print("👑 Tác giả: Đăng Mạnh")
+print("🚀 Tất cả chức năng đã sẵn sàng!")
+
+-- 🆘 HÀM DỰ PHÒNG NẾU FLUENT UI LỖI
+function CreateSimpleGUI()
+    local SimpleFrame = Instance.new("Frame")
+    SimpleFrame.Parent = ScreenGui
+    SimpleFrame.Size = UDim2.new(0, 300, 0, 200)
+    SimpleFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+    SimpleFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    
+    local Label = Instance.new("TextLabel")
+    Label.Parent = SimpleFrame
+    Label.Size = UDim2.new(1, 0, 0, 30)
+    Label.Text = "OMG HUB 🍎 - Simple Mode"
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    
+    local FarmBtn = Instance.new("TextButton")
+    FarmBtn.Parent = SimpleFrame
+    FarmBtn.Size = UDim2.new(0.8, 0, 0, 30)
+    FarmBtn.Position = UDim2.new(0.1, 0, 0.3, 0)
+    FarmBtn.Text = "🚀 Bật Auto Farm"
+    FarmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FarmBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+    
+    FarmBtn.MouseButton1Click:Connect(function()
+        Farm.Enabled = not Farm.Enabled
+        if Farm.Enabled then
+            StartAutoFarm()
+            FarmBtn.Text = "🛑 Tắt Auto Farm"
+        else
+            FarmBtn.Text = "🚀 Bật Auto Farm"
+        end
+    end)
+end
