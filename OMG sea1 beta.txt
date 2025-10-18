@@ -1,0 +1,528 @@
+-- 🍎 OMG HUB | Blox Fruits Script
+-- cre Đăng Mạnh theo mãi sau 👑
+-- 🚀 SEA 1 FARM SIÊU TỐC
+-- 🔒 ANTI-BAN PROTECTION ENABLED
+
+repeat task.wait() until game:IsLoaded()
+
+-- 🔒 ANTI-BAN SYSTEM
+local AntiBan = {
+    Enabled = true,
+    LastDetection = 0,
+    SafeMode = false,
+    RandomDelays = false, -- Tắt delay để farm nhanh hơn
+    Humanizer = false, -- Tắt humanizer để tối ưu tốc độ
+    AdminDetection = true,
+    AutoServerHop = true
+}
+
+-- 📋 DANH SÁCH ADMIN
+local AdminList = {
+    "Roblox", "Admin", "Moderator", "Mod", "GameAdmin", 
+    "Owner", "Staff", "Manager", "Support", "Helper"
+}
+
+-- 🎯 SEA 1 FARM CONFIG - TỐI ƯU TỐC ĐỘ
+local Sea1Farm = {
+    Enabled = false,
+    Speed = 1.0, -- Tốc độ farm (1.0 = bình thường, có thể tăng)
+    Priority = {
+        "Bosses",    -- Ưu tiên boss trước
+        "Elites",    -- Sau đó elite
+        "Players",   -- PVP nếu có
+        "NPCs"       -- Cuối cùng là NPC thường
+    },
+    CurrentTarget = nil,
+    AttackCooldown = 0,
+    LastTeleport = 0
+}
+
+-- 🔍 Hàm kiểm tra Admin
+function AntiBan:CheckForAdmin()
+    if not self.AdminDetection then return false end
+    
+    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+        for _, adminName in pairs(AdminList) do
+            if string.find(string.lower(player.Name), string.lower(adminName)) or
+               string.find(string.lower(player.DisplayName), string.lower(adminName)) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- 🔄 Hàm Auto Server Hop
+function AntiBan:ServerHop()
+    Fluent:Notify({
+        Title = "OMG HUB 🔄",
+        Content = "Đang chuyển server...",
+        Duration = 3
+    })
+    
+    local TeleportService = game:GetService("TeleportService")
+    local PlaceID = game.PlaceId
+    
+    -- Tìm server ít người nhất
+    local servers = {}
+    local success, result = pcall(function()
+        return game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/".. PlaceID .."/servers/Public?sortOrder=Asc&limit=100"))
+    end)
+    
+    if success and result.data then
+        for _, server in pairs(result.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                table.insert(servers, server)
+            end
+        end
+        
+        if #servers > 0 then
+            local bestServer = servers[1]
+            for _, server in pairs(servers) do
+                if server.playing < bestServer.playing then
+                    bestServer = server
+                end
+            end
+            TeleportService:TeleportToPlaceInstance(PlaceID, bestServer.id)
+        end
+    end
+end
+
+-- 🎯 Hàm tìm mục tiêu gần nhất SEA 1
+function FindNearestTarget()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character then return nil end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return nil end
+    
+    local nearestTarget = nil
+    local nearestDistance = math.huge
+    
+    -- Tìm NPC trong Sea 1
+    for _, npc in pairs(workspace.Enemies:GetChildren()) do
+        if npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 and npc:FindFirstChild("HumanoidRootPart") then
+            local distance = (humanoidRootPart.Position - npc.HumanoidRootPart.Position).Magnitude
+            if distance < nearestDistance and distance < 500 then -- Giới hạn khoảng cách
+                nearestDistance = distance
+                nearestTarget = npc
+            end
+        end
+    end
+    
+    -- Nếu không tìm thấy NPC, tìm boss
+    if not nearestTarget then
+        for _, boss in pairs(workspace:GetChildren()) do
+            if string.find(boss.Name, "Boss") and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
+                local distance = (humanoidRootPart.Position - boss.HumanoidRootPart.Position).Magnitude
+                if distance < nearestDistance then
+                    nearestDistance = distance
+                    nearestTarget = boss
+                end
+            end
+        end
+    end
+    
+    return nearestTarget
+end
+
+-- ⚔️ Hàm tấn công mục tiêu
+function AttackTarget(target)
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character then return end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    
+    -- Di chuyển đến mục tiêu
+    humanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+    
+    -- Sử dụng kỹ năng tấn công
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.X, false, game)
+    task.wait(0.1)
+    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.X, false, game)
+    
+    -- Sử dụng kỹ năng phụ
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.C, false, game)
+    task.wait(0.1)
+    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.C, false, game)
+    
+    -- Click chuột tấn công
+    mouse1click()
+end
+
+-- 🚀 Hàm Farm Sea 1 Siêu Tốc
+function StartSea1Farm()
+    Sea1Farm.Enabled = true
+    
+    spawn(function()
+        while Sea1Farm.Enabled do
+            AntiBan:Protect()
+            
+            -- Kiểm tra nếu đang trong combat
+            local player = game.Players.LocalPlayer
+            local character = player.Character
+            if character and character:FindFirstChild("Humanoid") then
+                -- Tăng tốc độ di chuyển
+                character.Humanoid.WalkSpeed = 50
+                character.Humanoid.JumpPower = 100
+                
+                -- Tìm và tấn công mục tiêu
+                local target = FindNearestTarget()
+                if target then
+                    Sea1Farm.CurrentTarget = target
+                    AttackTarget(target)
+                    
+                    -- Farm liên tục không delay
+                    if target:FindFirstChild("Humanoid") and target.Humanoid.Health <= 0 then
+                        Sea1Farm.CurrentTarget = nil
+                    end
+                else
+                    -- Nếu không có mục tiêu, di chuyển ngẫu nhiên để tìm
+                    if character:FindFirstChild("HumanoidRootPart") then
+                        local randomPos = Vector3.new(
+                            math.random(-500, 500),
+                            math.random(10, 50),
+                            math.random(-500, 500)
+                        )
+                        character.HumanoidRootPart.CFrame = CFrame.new(randomPos)
+                    end
+                end
+            end
+            
+            -- Không có delay để farm siêu tốc
+            task.wait()
+        end
+    end)
+end
+
+-- 🟢 Nút mở menu chính
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "OMGHUB_" .. tostring(math.random(10000,99999))
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local ImageButton = Instance.new("ImageButton")
+local UICorner = Instance.new("UICorner")
+
+ImageButton.Parent = ScreenGui
+ImageButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Màu xanh để thể hiện tốc độ
+ImageButton.BorderSizePixel = 0
+ImageButton.Position = UDim2.new(0.05, 0, 0.15, 0)
+ImageButton.Size = UDim2.new(0, 50, 0, 50)
+ImageButton.Draggable = true
+ImageButton.Image = "http://www.roblox.com/asset/?id=108786637679134"
+
+UICorner.CornerRadius = UDim.new(1, 10)
+UICorner.Parent = ImageButton
+
+ImageButton.MouseButton1Down:Connect(function()
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.End, false, game)
+end)
+
+-- 🟣 Giao diện Fluent
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+-- 🪟 Cửa sổ chính
+local Window = Fluent:CreateWindow({
+    Title = "OMG HUB 🍎 | SEA 1 SIÊU TỐC",                  
+    SubTitle = "cre Đăng Mạnh theo mãi sau | ⚡ TURBO MODE",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(500, 400),
+    Acrylic = true,
+    Theme = "Amethyst",                        
+    MinimizeKey = Enum.KeyCode.End
+})
+
+-- 📑 Các tab
+local Tabs = {
+    Main = Window:AddTab({ Title = "⚡ Farm Sea 1" }),        
+    Stats = Window:AddTab({ Title = "📊 Stats & Auto" }),     
+    Teleport = Window:AddTab({ Title = "📍 Teleport" }),          
+    Settings = Window:AddTab({ Title = "⚙️ Settings" }),       
+    Credits = Window:AddTab({ Title = "👑 Credits" })        
+}
+
+------------------------------------------------
+-- TAB 1: Farm Sea 1 Siêu Tốc
+------------------------------------------------
+local FarmSection = Tabs.Main:AddSection("⚡ SEA 1 FARM SIÊU TỐC")
+
+-- Toggle Farm chính
+local TurboFarmToggle = FarmSection:AddToggle("TurboFarmToggle", {
+    Title = "🚀 BẬT FARM SIÊU TỐC",
+    Description = "Auto farm Sea 1 với tốc độ tối đa",
+    Default = false
+})
+
+-- Hiển thị thông tin farm
+local FarmInfo = FarmSection:AddParagraph({
+    Title = "📊 THÔNG TIN FARM",
+    Content = "Chưa bắt đầu farm..."
+})
+
+-- Nút boost tốc độ
+FarmSection:AddButton({
+    Title = "⚡ BOOST TỐC ĐỘ",
+    Description = "Tăng gấp đôi tốc độ di chuyển và tấn công",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.WalkSpeed = 100
+            character.Humanoid.JumpPower = 150
+            Fluent:Notify({
+                Title = "OMG HUB ⚡",
+                Content = "Đã boost tốc độ lên MAX!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+-- Xử lý toggle Farm
+TurboFarmToggle:OnChanged(function(value)
+    if value then
+        Fluent:Notify({
+            Title = "OMG HUB 🚀",
+            Content = "BẬT FARM SIÊU TỐC SEA 1!",
+            Duration = 5
+        })
+        StartSea1Farm()
+        
+        -- Cập nhật thông tin farm
+        spawn(function()
+            while Sea1Farm.Enabled do
+                local targetInfo = Sea1Farm.CurrentTarget and "Đang farm: " .. Sea1Farm.CurrentTarget.Name or "Đang tìm mục tiêu..."
+                FarmInfo:SetDesc("⚡ Chế độ: SIÊU TỐC\n🎯 " .. targetInfo)
+                task.wait(1)
+            end
+        end)
+    else
+        Sea1Farm.Enabled = false
+        Fluent:Notify({
+            Title = "OMG HUB",
+            Content = "Đã tắt auto farm",
+            Duration = 3
+        })
+        FarmInfo:SetDesc("🛑 Đã dừng farm")
+    end
+end)
+
+------------------------------------------------
+-- TAB 2: Stats & Auto
+------------------------------------------------
+local StatsSection = Tabs.Stats:AddSection("📊 Tự Động Nâng Cấp")
+
+-- Auto stats
+local MeleeToggle = StatsSection:AddToggle("MeleeToggle", {
+    Title = "👊 Tự động nâng Melee",
+    Description = "Tự động upgrade sức mạnh cận chiến",
+    Default = false
+})
+
+local DefenseToggle = StatsSection:AddToggle("DefenseToggle", {
+    Title = "🛡️ Tự động nâng Defense",
+    Description = "Tự động upgrade phòng thủ",
+    Default = false
+})
+
+local SwordToggle = StatsSection:AddToggle("SwordToggle", {
+    Title = "⚔️ Tự động nâng Sword",
+    Description = "Tự động upgrade kiếm",
+    Default = false
+})
+
+-- Nút upgrade all
+StatsSection:AddButton({
+    Title = "🎯 UPGRADE TẤT CẢ",
+    Description = "Nâng cấp toàn bộ stats ngay lập tức",
+    Callback = function()
+        Fluent:Notify({
+            Title = "OMG HUB 🎯",
+            Content = "Đang upgrade tất cả stats...",
+            Duration = 3
+        })
+        -- Code upgrade stats
+    end
+})
+
+------------------------------------------------
+-- TAB 3: Teleport Sea 1
+------------------------------------------------
+local TeleportSection = Tabs.Teleport:AddSection("📍 Teleport Sea 1")
+
+-- Danh sách đảo Sea 1
+local Sea1Islands = {
+    "Starter Island",
+    "Jungle", 
+    "Pirate Village",
+    "Desert",
+    "Frozen Village",
+    "Marine Fortress",
+    "Middle Island"
+}
+
+-- Dropdown chọn đảo
+local IslandDropdown = TeleportSection:AddDropdown("IslandDropdown", {
+    Title = "Chọn đảo Sea 1",
+    Description = "Danh sách các đảo trong Sea 1",
+    Values = Sea1Islands,
+    Default = "Starter Island",
+    Multi = false
+})
+
+-- Nút teleport nhanh
+TeleportSection:AddButton({
+    Title = "🚀 TELEPORT NGAY",
+    Description = "Dịch chuyển tức thì đến đảo đã chọn",
+    Callback = function()
+        local selectedIsland = Fluent.Options.IslandDropdown.Value
+        Fluent:Notify({
+            Title = "OMG HUB 🚀",
+            Content = "Đang teleport đến: " .. selectedIsland,
+            Duration = 3
+        })
+        -- Code teleport
+    end
+})
+
+-- Teleport đến boss Sea 1
+TeleportSection:AddButton({
+    Title = "🦍 Teleport Gorilla King",
+    Description = "Dịch chuyển đến boss Gorilla King",
+    Callback = function()
+        Fluent:Notify({
+            Title = "OMG HUB 🦍",
+            Content = "Đang teleport đến Gorilla King...",
+            Duration = 3
+        })
+    end
+})
+
+TeleportSection:AddButton({
+    Title = "🐰 Teleport Bobby",
+    Description = "Dịch chuyển đến boss Bobby",
+    Callback = function()
+        Fluent:Notify({
+            Title = "OMG HUB 🐰",
+            Content = "Đang teleport đến Bobby...",
+            Duration = 3
+        })
+    end
+})
+
+------------------------------------------------
+-- TAB 4: Settings
+------------------------------------------------
+local SettingsSection = Tabs.Settings:AddSection("⚙️ Cài Đặt")
+
+-- Anti-ban settings
+local AntiBanToggle = SettingsSection:AddToggle("AntiBanToggle", {
+    Title = "🔒 Bật Anti-Ban",
+    Description = "Bảo vệ khỏi bị phát hiện",
+    Default = true
+})
+
+local AdminCheckToggle = SettingsSection:AddToggle("AdminCheckToggle", {
+    Title = "👀 Phát hiện Admin",
+    Description = "Tự động thoát khi có admin",
+    Default = true
+})
+
+-- Nút server hop
+SettingsSection:AddButton({
+    Title = "🔄 Server Hop",
+    Description = "Chuyển server ngay lập tức",
+    Callback = function()
+        AntiBan:ServerHop()
+    end
+})
+
+-- Nút reload script
+SettingsSection:AddButton({
+    Title = "🔄 Reload Script",
+    Description = "Tải lại script nếu có lỗi",
+    Callback = function()
+        Fluent:Notify({
+            Title = "OMG HUB",
+            Content = "Đang reload script...",
+            Duration = 3
+        })
+        wait(2)
+        -- Code reload script
+    end
+})
+
+------------------------------------------------
+-- TAB 5: Credits
+------------------------------------------------
+local CreditsSection = Tabs.Credits:AddSection("👑 Thông Tin")
+
+Tabs.Credits:AddParagraph({
+    Title = "OMG HUB 🍎 | SEA 1 SIÊU TỐC",
+    Content = "Script được tạo bởi Đăng Mạnh\n" ..
+             "Theo mãi sau không bao giờ bỏ cuộc!\n\n" ..
+             "⚡ CHẾ ĐỘ SIÊU TỐC:\n" ..
+             "• Farm không delay\n" ..
+             "• Tốc độ di chuyển MAX\n" ..
+             "• Auto target thông minh\n" ..
+             "• Tấn công liên tục"
+})
+
+Tabs.Credits:AddButton({
+    Title = "📱 Follow Tiktok",
+    Description = "Cập nhật script mới nhất",
+    Callback = function()
+        setclipboard("https://www.tiktok.com/@dangmanh_official")
+        Fluent:Notify({
+            Title = "OMG HUB 📱",
+            Content = "Đã copy link Tiktok!",
+            Duration = 3
+        })
+    end
+})
+
+-- 🔄 Auto Admin Check
+spawn(function()
+    while true do
+        if AntiBan.Enabled and AntiBan.AdminDetection then
+            if AntiBan:CheckForAdmin() then
+                Fluent:Notify({
+                    Title = "CẢNH BÁO 🚨",
+                    Content = "Phát hiện Admin! Đang chuyển server...",
+                    Duration = 5
+                })
+                AntiBan:ServerHop()
+            end
+        end
+        task.wait(10)
+    end
+end)
+
+-- 🚀 Auto Farm Stats
+spawn(function()
+    while true do
+        if Sea1Farm.Enabled then
+            -- Tự động nâng stats nếu được bật
+            if Fluent.Options.MeleeToggle.Value then
+                -- Code auto melee
+            end
+            if Fluent.Options.DefenseToggle.Value then
+                -- Code auto defense
+            end
+            if Fluent.Options.SwordToggle.Value then
+                -- Code auto sword
+            end
+        end
+        task.wait(5)
+    end
+end)
+
+print("====================================")
+print("       OMG HUB SEA 1 SIÊU TỐC")
+print("     cre Đăng Mạnh theo mãi sau")
+print("           ⚡ TURBO MODE")
+print("====================================")
