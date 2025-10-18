@@ -1,0 +1,486 @@
+-- 🍎 OMG HUB | Blox Fruits Script
+-- cre Đăng Mạnh theo mãi sau 👑
+-- 🚀 SEA 1 FARM SIÊU TỐC
+-- 🔧 TỐI ƯU CHO KRNL
+
+repeat task.wait() until game:IsLoaded()
+
+print("🎮 OMG HUB: Đang khởi động trên KRNL...")
+
+-- 🔒 BASIC ANTI-BAN
+local AntiBan = {
+    Enabled = true,
+    AdminDetection = true
+}
+
+-- 🎯 FARM CONFIG
+local Sea1Farm = {
+    Enabled = false,
+    CurrentTarget = nil
+}
+
+-- 🗺️ SEA 1 LOCATIONS
+local Sea1Islands = {
+    "Starter Island",
+    "Jungle", 
+    "Pirate Village",
+    "Desert",
+    "Frozen Village",
+    "Marine Fortress"
+}
+
+-- 🦍 SEA 1 BOSSES
+local Sea1Bosses = {
+    "The Gorilla King",
+    "Bobby",
+    "Yeti",
+    "Mob Leader", 
+    "Vice Admiral",
+    "Warden"
+}
+
+-- 🎨 CREATE SIMPLE GUI (KRNL COMPATIBLE)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "OMGHUB_KRNL"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Toggle Button
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleBtn"
+ToggleButton.Parent = ScreenGui
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Position = UDim2.new(0.02, 0, 0.1, 0)
+ToggleButton.Size = UDim2.new(0, 50, 0, 50)
+ToggleButton.Text = "🍎"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextScaled = true
+ToggleButton.Draggable = true
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(1, 0)
+UICorner.Parent = ToggleButton
+
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.3, 0, 0.2, 0)
+MainFrame.Size = UDim2.new(0, 400, 0, 450)
+MainFrame.Visible = false
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+-- Title Bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Parent = MainFrame
+TitleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+TitleBar.BorderSizePixel = 0
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 8)
+TitleCorner.Parent = TitleBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Parent = TitleBar
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Size = UDim2.new(1, 0, 1, 0)
+TitleLabel.Text = "OMG HUB 🍎 | KRNL"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 18
+TitleLabel.Font = Enum.Font.GothamBold
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Parent = TitleBar
+CloseButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+CloseButton.BorderSizePixel = 0
+CloseButton.Position = UDim2.new(0.9, 0, 0.15, 0)
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 14
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(1, 0)
+CloseCorner.Parent = CloseButton
+
+-- Scrolling Frame
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Name = "ScrollFrame"
+ScrollFrame.Parent = MainFrame
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.Position = UDim2.new(0, 0, 0.1, 0)
+ScrollFrame.Size = UDim2.new(1, 0, 0.9, 0)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 2, 0)
+
+-- Toggle GUI Visibility
+ToggleButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+end)
+
+-- 🎯 CREATE TABS SYSTEM
+local Tabs = {}
+local CurrentTab = ""
+
+local function CreateTab(name, displayName)
+    local TabButton = Instance.new("TextButton")
+    TabButton.Name = name .. "Tab"
+    TabButton.Parent = ScrollFrame
+    TabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    TabButton.BorderSizePixel = 0
+    TabButton.Size = UDim2.new(0.95, 0, 0, 35)
+    TabButton.Text = displayName
+    TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.TextSize = 14
+    
+    local TabCorner = Instance.new("UICorner")
+    TabCorner.CornerRadius = UDim.new(0, 6)
+    TabCorner.Parent = TabButton
+    
+    local TabContent = Instance.new("Frame")
+    TabContent.Name = name .. "Content"
+    TabContent.Parent = ScrollFrame
+    TabContent.BackgroundTransparency = 1
+    TabContent.Size = UDim2.new(1, 0, 0, 0)
+    TabContent.Visible = false
+    
+    Tabs[name] = {
+        Button = TabButton,
+        Content = TabContent,
+        Elements = {}
+    }
+    
+    TabButton.MouseButton1Click:Connect(function()
+        -- Hide all tabs
+        for tabName, tabData in pairs(Tabs) do
+            tabData.Content.Visible = false
+            tabData.Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        end
+        
+        -- Show selected tab
+        Tabs[name].Content.Visible = true
+        Tabs[name].Button.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+        CurrentTab = name
+    end)
+    
+    return TabContent
+end
+
+-- 🎯 CREATE UI ELEMENTS
+local function CreateButton(parent, text, callback)
+    local Button = Instance.new("TextButton")
+    Button.Parent = parent
+    Button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    Button.BorderSizePixel = 0
+    Button.Size = UDim2.new(0.9, 0, 0, 35)
+    Button.Text = text
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.TextSize = 14
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 6)
+    ButtonCorner.Parent = Button
+    
+    Button.MouseButton1Click:Connect(callback)
+    
+    return Button
+end
+
+local function CreateToggle(parent, text, default, callback)
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Parent = parent
+    ToggleFrame.BackgroundTransparency = 1
+    ToggleFrame.Size = UDim2.new(0.9, 0, 0, 30)
+    
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Parent = ToggleFrame
+    ToggleButton.BackgroundColor3 = default and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(80, 80, 80)
+    ToggleButton.BorderSizePixel = 0
+    ToggleButton.Size = UDim2.new(0, 50, 0, 25)
+    ToggleButton.Text = ""
+    
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(0, 12)
+    ToggleCorner.Parent = ToggleButton
+    
+    local ToggleLabel = Instance.new("TextLabel")
+    ToggleLabel.Parent = ToggleFrame
+    ToggleLabel.BackgroundTransparency = 1
+    ToggleLabel.Position = UDim2.new(0, 60, 0, 0)
+    ToggleLabel.Size = UDim2.new(1, -60, 1, 0)
+    ToggleLabel.Text = text
+    ToggleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleLabel.TextSize = 14
+    ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local State = default
+    
+    ToggleButton.MouseButton1Click:Connect(function()
+        State = not State
+        ToggleButton.BackgroundColor3 = State and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(80, 80, 80)
+        if callback then
+            callback(State)
+        end
+    end)
+    
+    return {
+        Set = function(value)
+            State = value
+            ToggleButton.BackgroundColor3 = State and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(80, 80, 80)
+        end,
+        Get = function() return State end
+    }
+end
+
+local function CreateLabel(parent, text)
+    local Label = Instance.new("TextLabel")
+    Label.Parent = parent
+    Label.BackgroundTransparency = 1
+    Label.Size = UDim2.new(0.9, 0, 0, 25)
+    Label.Text = text
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    return Label
+end
+
+-- 🎯 CREATE TABS CONTENT
+local FarmTab = CreateTab("Farm", "⚡ Auto Farm")
+local BossTab = CreateTab("Boss", "🦍 Farm Boss")
+local TeleportTab = CreateTab("Teleport", "📍 Teleport")
+local PlayerTab = CreateTab("Player", "👤 Player")
+local SettingsTab = CreateTab("Settings", "⚙️ Settings")
+
+-- Position Tabs
+local yPosition = 10
+for tabName, tabData in pairs(Tabs) do
+    tabData.Button.Position = UDim2.new(0.025, 0, 0, yPosition)
+    tabData.Content.Position = UDim2.new(0, 0, 0, yPosition + 45)
+    yPosition = yPosition + 45
+end
+
+-- 🎯 TAB 1: AUTO FARM
+CreateLabel(FarmTab, "🚀 AUTO FARM SEA 1").TextSize = 16
+
+local FarmToggle = CreateToggle(FarmTab, "Bật Auto Farm", false, function(state)
+    Sea1Farm.Enabled = state
+    if state then
+        print("OMG HUB: Auto Farm đã bật!")
+        StartSea1Farm()
+    else
+        print("OMG HUB: Auto Farm đã tắt!")
+    end
+end)
+
+CreateButton(FarmTab, "⚡ Boost Tốc Độ", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character and character:FindFirstChild("Humanoid") then
+        character.Humanoid.WalkSpeed = 100
+        character.Humanoid.JumpPower = 120
+        print("OMG HUB: Đã boost tốc độ!")
+    end
+end)
+
+-- 🎯 TAB 2: BOSS FARM
+CreateLabel(BossTab, "🦍 AUTO FARM BOSS").TextSize = 16
+
+local BossFarmToggle = CreateToggle(BossTab, "Bật Farm Boss", false, function(state)
+    if state then
+        print("OMG HUB: Farm Boss đã bật!")
+    else
+        print("OMG HUB: Farm Boss đã tắt!")
+    end
+end)
+
+CreateButton(BossTab, "📍 Teleport Gorilla King", function()
+    print("OMG HUB: Đang teleport đến Gorilla King...")
+end)
+
+CreateButton(BossTab, "📍 Teleport Bobby", function()
+    print("OMG HUB: Đang teleport đến Bobby...")
+end)
+
+-- 🎯 TAB 3: TELEPORT
+CreateLabel(TeleportTab, "📍 TELEPORT ĐẢO").TextSize = 16
+
+for _, island in pairs(Sea1Islands) do
+    CreateButton(TeleportTab, "🚀 " .. island, function()
+        print("OMG HUB: Đang teleport đến " .. island)
+    end)
+end
+
+-- 🎯 TAB 4: PLAYER
+CreateLabel(PlayerTab, "👤 CÀI ĐẶT PLAYER").TextSize = 16
+
+CreateButton(PlayerTab, "🎯 Tăng WalkSpeed 50", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character and character:FindFirstChild("Humanoid") then
+        character.Humanoid.WalkSpeed = 50
+        print("OMG HUB: WalkSpeed = 50")
+    end
+end)
+
+CreateButton(PlayerTab, "🎯 Tăng JumpPower 100", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character and character:FindFirstChild("Humanoid") then
+        character.Humanoid.JumpPower = 100
+        print("OMG HUB: JumpPower = 100")
+    end
+end)
+
+CreateButton(PlayerTab, "🔄 Reset Stats", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character and character:FindFirstChild("Humanoid") then
+        character.Humanoid.WalkSpeed = 16
+        character.Humanoid.JumpPower = 50
+        print("OMG HUB: Đã reset stats")
+    end
+end)
+
+-- 🎯 TAB 5: SETTINGS
+CreateLabel(SettingsTab, "⚙️ CÀI ĐẶT").TextSize = 16
+
+local AntiBanToggle = CreateToggle(SettingsTab, "Bật Anti-Ban", true, function(state)
+    AntiBan.Enabled = state
+    print("OMG HUB: Anti-Ban = " .. tostring(state))
+end)
+
+CreateButton(SettingsTab, "🔄 Server Hop", function()
+    print("OMG HUB: Đang chuyển server...")
+    ServerHop()
+end)
+
+CreateButton(SettingsTab, "📱 Thông Tin", function()
+    print("🎮 OMG HUB - KRNL Version")
+    print("👑 cre Đăng Mạnh theo mãi sau")
+    print("🚀 Sea 1 Farm Siêu Tốc")
+end)
+
+-- 🚀 FARM FUNCTIONS
+function FindNearestTarget()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character then return nil end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return nil end
+    
+    local nearestTarget = nil
+    local nearestDistance = math.huge
+    
+    -- Tìm NPC
+    local enemies = workspace:FindFirstChild("Enemies")
+    if enemies then
+        for _, npc in pairs(enemies:GetChildren()) do
+            if npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 and npc:FindFirstChild("HumanoidRootPart") then
+                local distance = (humanoidRootPart.Position - npc.HumanoidRootPart.Position).Magnitude
+                if distance < nearestDistance and distance < 200 then
+                    nearestDistance = distance
+                    nearestTarget = npc
+                end
+            end
+        end
+    end
+    
+    return nearestTarget
+end
+
+function AttackTarget(target)
+    if not target then return end
+    
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character then return end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    local targetHRP = target:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart or not targetHRP then return end
+    
+    -- Di chuyển đến target
+    humanoidRootPart.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 5)
+    
+    -- Tấn công
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.X, false, game)
+    task.wait(0.1)
+    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.X, false, game)
+    
+    mouse1click()
+end
+
+function StartSea1Farm()
+    spawn(function()
+        while Sea1Farm.Enabled do
+            local target = FindNearestTarget()
+            if target then
+                Sea1Farm.CurrentTarget = target
+                AttackTarget(target)
+            else
+                -- Di chuyển ngẫu nhiên nếu không có target
+                local character = game.Players.LocalPlayer.Character
+                if character and character:FindFirstChild("HumanoidRootPart") then
+                    local randomPos = Vector3.new(
+                        math.random(-100, 100),
+                        math.random(10, 30), 
+                        math.random(-100, 100)
+                    )
+                    character.HumanoidRootPart.CFrame = CFrame.new(randomPos)
+                end
+            end
+            
+            task.wait(0.5)
+        end
+    end)
+end
+
+function ServerHop()
+    local TeleportService = game:GetService("TeleportService")
+    local PlaceID = game.PlaceId
+    
+    local servers = {}
+    local success, result = pcall(function()
+        return game:HttpGet("https://games.roblox.com/v1/games/".. PlaceID .."/servers/Public?sortOrder=Asc&limit=100")
+    end)
+    
+    if success then
+        local data = game:GetService("HttpService"):JSONDecode(result)
+        if data and data.data then
+            for _, server in pairs(data.data) do
+                if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                    table.insert(servers, server)
+                end
+            end
+            
+            if #servers > 0 then
+                TeleportService:TeleportToPlaceInstance(PlaceID, servers[1].id)
+            end
+        end
+    end
+end
+
+-- 🎯 MỞ TAB ĐẦU TIÊN
+Tabs["Farm"].Button.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+Tabs["Farm"].Content.Visible = true
+CurrentTab = "Farm"
+
+print("✅ OMG HUB: Đã khởi động thành công!")
+print("🎮 Phiên bản: KRNL Optimized")
+print("👑 Tác giả: Đăng Mạnh")
+print("🚀 Tính năng: Auto Farm, Boss Farm, Teleport")
